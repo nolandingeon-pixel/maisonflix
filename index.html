@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- Vie privée : pas d'indexation, pas de fuite de referrer -->
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <title>MaisonFlix</title>
+<!-- WebTorrent : optionnel, ne sert que si tu ajoutes un magnetURI dans LIBRARY -->
 <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
 <style>
 :root{--bg:#141414;--red:#e50914;--txt:#fff;--mut:#b3b3b3;--pad:4vw}
@@ -27,13 +27,13 @@ body.locked #app{display:none}
 
 /* ---------- LOGO / NAV ---------- */
 .logo{font-weight:900;letter-spacing:2px;color:var(--red);font-size:clamp(1.3rem,3vw,2rem);text-transform:uppercase;text-shadow:0 2px 8px #0008}
-nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:16px;padding:14px var(--pad);
+nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:10px;padding:14px var(--pad);
   background:linear-gradient(#000c,transparent);transition:background .3s}
 nav.solid{background:#141414f2}
 nav .sp{flex:1}
-#search{background:#000a;border:1px solid #fff5;color:#fff;padding:9px 14px;border-radius:4px;width:min(260px,40vw);outline:0}
+#search{background:#000a;border:1px solid #fff5;color:#fff;padding:9px 14px;border-radius:4px;width:min(260px,36vw);outline:0}
 #search:focus{border-color:#fff}
-.ibtn{background:#ffffff1a;color:#fff;padding:9px 13px;border-radius:4px}
+.ibtn{background:#ffffff1a;color:#fff;padding:9px 13px;border-radius:4px;white-space:nowrap}
 .ibtn:hover{background:#ffffff33}
 
 /* ---------- HERO ---------- */
@@ -42,7 +42,7 @@ nav .sp{flex:1}
 .hero-in{position:relative;z-index:2;max-width:560px}
 .hero-in h1{font-size:clamp(2rem,6vw,4rem);margin-bottom:12px;text-shadow:0 2px 10px #000}
 .hero-in p{color:#ddd;font-size:clamp(.9rem,1.6vw,1.15rem);line-height:1.45;margin-bottom:20px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.btn{padding:11px 26px;border-radius:4px;font-weight:700;font-size:1rem;margin-right:10px}
+.btn{padding:11px 26px;border-radius:4px;font-weight:700;font-size:1rem;margin:0 10px 8px 0}
 .btn.play{background:#fff;color:#000}.btn.play:hover{background:#ddd}
 .btn.info{background:#6d6d6eb3;color:#fff}.btn.info:hover{background:#6d6d6e66}
 
@@ -50,13 +50,12 @@ nav .sp{flex:1}
 main{padding:0 var(--pad) 60px;position:relative;z-index:3;margin-top:-4vh}
 h2{margin:28px 0 12px;font-size:clamp(1.1rem,2vw,1.5rem)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
-.card{position:relative;aspect-ratio:2/3;border-radius:6px;overflow:hidden;background:linear-gradient(135deg,#333,#1a1a1a);cursor:pointer;
-  transition:transform .25s,box-shadow .25s}
+.card{position:relative;aspect-ratio:2/3;border-radius:6px;overflow:hidden;background:linear-gradient(135deg,#333,#1a1a1a);cursor:pointer;transition:transform .25s,box-shadow .25s}
 .card img{width:100%;height:100%;object-fit:cover;display:block}
 .card .t{position:absolute;inset:auto 0 0 0;padding:30px 8px 8px;font-size:.85rem;font-weight:600;background:linear-gradient(transparent,#000d)}
 .card .badge{position:absolute;top:6px;left:6px;background:var(--red);font-size:.65rem;padding:2px 6px;border-radius:3px;font-weight:700}
 @media (hover:hover){.card:hover{transform:scale(1.12);z-index:10;box-shadow:0 10px 30px #000c}}
-.empty{color:var(--mut);padding:20px 0}
+.empty{color:var(--mut);padding:10px 0}
 
 /* ---------- MODALES ---------- */
 .modal{position:fixed;inset:0;z-index:200;background:#000d;display:none;align-items:center;justify-content:center;padding:16px}
@@ -68,6 +67,16 @@ h2{margin:28px 0 12px;font-size:clamp(1.1rem,2vw,1.5rem)}
 #info .tx .meta{color:#46d369;font-weight:600;margin-bottom:12px;font-size:.9rem}
 #info .tx p{line-height:1.5;color:#ddd;margin-bottom:16px}
 .x{position:absolute;top:10px;right:12px;width:38px;height:38px;border-radius:50%;background:#000b;color:#fff;font-size:1.3rem;z-index:5}
+
+/* Formulaire d'ajout */
+.form{background:#181818;border-radius:10px;max-width:560px;width:100%;padding:24px;position:relative;max-height:90vh;overflow:auto}
+.form h3{margin-bottom:6px}
+.form label{display:block;color:var(--mut);font-size:.8rem;margin:16px 0 4px}
+.form input{width:100%;background:#2b2b2b;border:1px solid #444;color:#fff;padding:10px;border-radius:4px}
+.form .row{display:flex;gap:8px}
+.res{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #2c2c2c}
+.res img{width:45px;height:68px;object-fit:cover;border-radius:3px;background:#333}
+.res .rt{flex:1;font-size:.9rem}.res .rt small{color:var(--mut)}
 
 /* Lecteur immersif */
 #player{background:#000;padding:0;flex-direction:column}
@@ -81,8 +90,8 @@ h2{margin:28px 0 12px;font-size:clamp(1.1rem,2vw,1.5rem)}
 #perr{color:#ff6b6b;margin-top:10px}
 
 footer{color:#666;text-align:center;font-size:.75rem;padding:30px 20px}
-@media (max-width:600px){.grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px}#hero{min-height:65vh}}
-@media (min-width:1900px){html{font-size:20px}.grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}} /* grands écrans / TV */
+@media (max-width:600px){.grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px}#hero{min-height:65vh}#addBtn span{display:none}}
+@media (min-width:1900px){html{font-size:20px}.grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}}
 </style>
 </head>
 <body class="locked">
@@ -100,6 +109,7 @@ footer{color:#666;text-align:center;font-size:.75rem;padding:30px 20px}
     <div class="logo">MaisonFlix</div>
     <div class="sp"></div>
     <input id="search" type="search" placeholder="Rechercher un titre…" autocomplete="off">
+    <button class="ibtn" id="addBtn" title="Ajouter un film">＋<span> Ajouter</span></button>
     <button class="ibtn" id="lockBtn" title="Verrouiller (ou Échap ×2)">🔒</button>
   </nav>
 
@@ -115,12 +125,18 @@ footer{color:#666;text-align:center;font-size:.75rem;padding:30px 20px}
   <main>
     <h2>Ma bibliothèque</h2>
     <div class="grid" id="gridLib"></div>
+
+    <div id="exploreWrap">
+      <h2>Explorer archive.org · films du domaine public</h2>
+      <div class="grid" id="gridExplore"></div>
+    </div>
+
     <div id="trendWrap">
       <h2>Tendances TMDB</h2>
       <div class="grid" id="gridTrend"></div>
     </div>
   </main>
-  <footer>Usage personnel · Ne diffuse que des contenus dont tu détiens les droits ou libres de droits.<br>Ce produit utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB.</footer>
+  <footer>Usage personnel · Ne diffuse que des contenus libres de droits ou dont tu détiens les droits.<br>Ce produit utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB.</footer>
 </div>
 
 <!-- Modale infos -->
@@ -135,46 +151,64 @@ footer{color:#666;text-align:center;font-size:.75rem;padding:30px 20px}
   </div>
 </div>
 
+<!-- Modale ajout (archive.org) -->
+<div class="modal" id="add">
+  <div class="form">
+    <button class="x" id="aClose">✕</button>
+    <h3>Ajouter un film depuis archive.org</h3>
+    <label>Chercher par titre</label>
+    <div class="row"><input id="aQ" placeholder="Ex : Nosferatu, Metropolis, Charlie Chaplin…"><button class="ibtn" id="aGo">🔎</button></div>
+    <div id="aRes"></div>
+    <label>… ou colle un lien / identifiant archive.org</label>
+    <div class="row"><input id="aUrl" placeholder="https://archive.org/details/xxxxx"><button class="ibtn" id="aUrlGo">Ajouter</button></div>
+    <div id="aMsg" class="empty"></div>
+  </div>
+</div>
+
 <!-- Modale lecteur -->
 <div class="modal" id="player">
   <button class="x" id="pClose">✕</button>
   <div id="pbar"><div id="ptitle"></div><div id="pstats"></div></div>
-  <div id="loader"><div id="ltxt">Connexion au réseau P2P…</div><div class="track"><div class="fill" id="lfill"></div></div><div id="perr"></div></div>
+  <div id="loader"><div id="ltxt">Chargement…</div><div class="track"><div class="fill" id="lfill"></div></div><div id="perr"></div></div>
   <video id="vid" controls playsinline></video>
 </div>
 
 <script>
 /* =====================================================================
-   1) CONFIGURATION  ← METS TA CLÉ API TMDB ICI
+   1) CONFIGURATION  ← METS TA CLÉ API TMDB ICI (optionnelle)
+   Sans clé : tout marche, avec les vignettes d'archive.org.
+   Avec clé : belles affiches + résumés en français + tendances.
    ===================================================================== */
 const CONFIG = {
   TMDB_KEY: "9fe40be6d99b98e9e9ff13351f0ded4d",              // ← colle ta clé API TMDB (v3) entre les guillemets
   LANG: "fr-FR",
-  AUTOLOCK_MIN: 5            // verrouillage auto après X minutes d'inactivité
+  AUTOLOCK_MIN: 5,           // verrouillage auto après X minutes d'inactivité
+  EXPLORE_COUNT: 24          // nombre de films affichés dans "Explorer archive.org"
 };
 
 /* =====================================================================
-   2) TA BIBLIOTHÈQUE  (ID TMDB + magnetURI)
-   Exemples = films libres de droits fournis par WebTorrent/Blender.
-   Remplace/ajoute les tiens (fichiers en .mp4 / .webm de préférence).
-   Trackers "wss://" obligatoires pour que le navigateur trouve des pairs.
+   2) TA BIBLIOTHÈQUE FIXE (optionnel — tu peux aussi tout ajouter via le bouton ＋)
+   - archive.org : { id: "identifiant-archive-org", title: "Titre" }
+     (l'identifiant = la fin de l'URL https://archive.org/details/IDENTIFIANT)
+   - WebTorrent  : { title: "Titre", magnetURI: "magnet:?xt=..." }  (avancé, optionnel)
+   Si un identifiant est incorrect, l'erreur s'affichera au moment de la lecture.
    ===================================================================== */
-const WSS = "&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=wss%3A%2F%2Ftracker.fastcast.nz&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2F";
 const LIBRARY = [
-  { tmdbId: 10378,  title: "Big Buck Bunny",  magnetURI: "magnet:?xt=urn:btih:dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c&dn=Big+Buck+Bunny" + WSS },
-  { tmdbId: 45745,  title: "Sintel",          magnetURI: "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=Sintel" + WSS },
-  { tmdbId: 133701, title: "Tears of Steel",  magnetURI: "magnet:?xt=urn:btih:209c8226b299b308beaf2b9cd3fb49212dbd13ec&dn=Tears+of+Steel" + WSS },
-  { tmdbId: 296672, title: "Cosmos Laundromat", magnetURI: "magnet:?xt=urn:btih:c9e15763f722f23e98a29decdfae341b98d53056&dn=Cosmos+Laundromat" + WSS }
-  // , { tmdbId: 123, title: "Mon film", magnetURI: "magnet:?xt=urn:btih:..." }
+  { id: "night_of_the_living_dead", title: "La Nuit des morts-vivants" },
+  { id: "BigBuckBunny_124",          title: "Big Buck Bunny" }
 ];
 
 /* =====================================================================
    3) OUTILS
    ===================================================================== */
 const $ = s => document.querySelector(s);
+const IA = "https://archive.org";
 const IMG = (p, size = "w500") => p ? `https://image.tmdb.org/t/p/${size}${p}` : "";
-let movies = [];      // bibliothèque enrichie par TMDB
-let trending = [];    // tendances TMDB
+const thumb = id => `${IA}/services/img/${encodeURIComponent(id)}`;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const clean = d => (Array.isArray(d) ? d.join(" ") : (d || "")).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+
+let library = [], explore = [], trending = [], heroMovie = null;
 
 async function tmdb(path, params = "") {
   const r = await fetch(`https://api.themoviedb.org/3${path}?api_key=${CONFIG.TMDB_KEY}&language=${CONFIG.LANG}${params}`);
@@ -182,179 +216,291 @@ async function tmdb(path, params = "") {
   return r.json();
 }
 
+/* Recherche archive.org (API publique, sans clé) */
+async function iaSearch(q, rows = 24) {
+  const p = new URLSearchParams({ q, rows, page: 1, output: "json" });
+  ["identifier", "title", "year", "description"].forEach(f => p.append("fl[]", f));
+  p.append("sort[]", "downloads desc");
+  const r = await fetch(`${IA}/advancedsearch.php?${p}`);
+  if (!r.ok) throw new Error("archive.org " + r.status);
+  return (await r.json()).response.docs;
+}
+
+/* Transforme un résultat archive.org en objet "film" */
+const fromIA = (d, extra = {}) => ({
+  key: "ia:" + d.identifier, archive: d.identifier, title: d.title || d.identifier,
+  overview: clean(d.description).slice(0, 600) || "Film du domaine public sur archive.org.",
+  year: String(d.year || "").slice(0, 4), poster: thumb(d.identifier), backdrop: thumb(d.identifier), ...extra
+});
+
+/* Si clé TMDB : remplace vignette/résumé par ceux de TMDB (recherche par titre) */
+async function enrich(m) {
+  if (!CONFIG.TMDB_KEY) return m;
+  try {
+    const r = await tmdb("/search/movie", "&query=" + encodeURIComponent(m.title) + (m.year ? "&year=" + m.year : ""));
+    const f = r.results && r.results[0];
+    if (f && f.poster_path) {
+      m.poster = IMG(f.poster_path);
+      if (f.backdrop_path) m.backdrop = IMG(f.backdrop_path, "w1280");
+      if (f.overview) m.overview = f.overview;
+    }
+  } catch (e) {}
+  return m;
+}
+
 /* =====================================================================
-   4) CHARGEMENT DES DONNÉES
+   4) MES FILMS (sauvegardés dans le navigateur)
+   ===================================================================== */
+const KEY = "maisonflix_mine";
+const loadMine = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } };
+const saveMine = l => { try { localStorage.setItem(KEY, JSON.stringify(l)); } catch (e) {} };
+
+function addMine(id, title) {
+  const l = loadMine();
+  if (!l.some(m => m.id === id) && !LIBRARY.some(m => m.id === id)) { l.push({ id, title }); saveMine(l); }
+  closeAll(); loadData();
+}
+function removeMine(id) { saveMine(loadMine().filter(m => m.id !== id)); closeAll(); loadData(); }
+
+/* =====================================================================
+   5) CHARGEMENT DES DONNÉES
    ===================================================================== */
 async function loadData() {
-  // Bibliothèque : on enrichit chaque entrée avec les infos TMDB
-  movies = await Promise.all(LIBRARY.map(async m => {
-    const base = { ...m, overview: "Aucun résumé (ajoute ta clé TMDB).", poster: "", backdrop: "", year: "" };
-    if (!CONFIG.TMDB_KEY) return base;
-    try {
-      const d = await tmdb(`/movie/${m.tmdbId}`);
-      return { ...base, title: d.title || m.title, overview: d.overview || base.overview,
-               poster: d.poster_path, backdrop: d.backdrop_path, year: (d.release_date || "").slice(0, 4) };
-    } catch (e) { return base; }
+  const entries = [...LIBRARY, ...loadMine().map(m => ({ ...m, mine: true }))];
+  library = await Promise.all(entries.map(async e => {
+    const m = { key: e.id ? "ia:" + e.id : "mg:" + e.title, archive: e.id, magnetURI: e.magnetURI, title: e.title,
+      overview: "Aucun résumé disponible.", year: "", poster: e.id ? thumb(e.id) : "", backdrop: e.id ? thumb(e.id) : "", mine: e.mine, src: "lib" };
+    if (e.id) {
+      try {                                       // résumé + année depuis archive.org
+        const md = (await (await fetch(`${IA}/metadata/${encodeURIComponent(e.id)}`)).json()).metadata || {};
+        m.overview = clean(md.description).slice(0, 600) || m.overview;
+        m.year = String(md.year || md.date || "").slice(0, 4);
+      } catch (x) {}
+    }
+    return enrich(m);
   }));
-  // Tendances de la semaine
-  if (CONFIG.TMDB_KEY) {
-    try {
-      const t = await tmdb("/trending/movie/week");
-      trending = t.results.map(d => ({ tmdbId: d.id, title: d.title, overview: d.overview || "Pas de résumé.",
-        poster: d.poster_path, backdrop: d.backdrop_path, year: (d.release_date || "").slice(0, 4) }));
-    } catch (e) { console.warn(e); }
-  } else {
-    $("#trendWrap").style.display = "none";
-  }
-  setHero(movies[0]);
+  render();
+  if (library[0]) setHero(library[0]);
+  loadExplore();
+  loadTrending();
+}
+
+async function loadExplore() {
+  if (explore.length) return;                     // une seule fois par session
+  try {
+    const docs = await iaSearch("collection:feature_films AND mediatype:movies", CONFIG.EXPLORE_COUNT);
+    explore = await Promise.all(docs.map(d => enrich(fromIA(d, { src: "explore" }))));
+  } catch (e) { $("#exploreWrap").style.display = "none"; }
+  render();
+  if (!heroMovie && explore[0]) setHero(explore[0]);
+}
+
+async function loadTrending() {
+  if (!CONFIG.TMDB_KEY) { $("#trendWrap").style.display = "none"; return; }
+  try {
+    const t = await tmdb("/trending/movie/week");
+    trending = t.results.map(d => ({ key: "tm:" + d.id, title: d.title, overview: d.overview || "Pas de résumé.",
+      poster: IMG(d.poster_path), backdrop: IMG(d.backdrop_path, "w1280"), year: (d.release_date || "").slice(0, 4), src: "trend" }));
+  } catch (e) { $("#trendWrap").style.display = "none"; }
   render();
 }
 
 /* =====================================================================
-   5) AFFICHAGE
+   6) AFFICHAGE
    ===================================================================== */
-let heroMovie = null;
 function setHero(m) {
   if (!m) return;
   heroMovie = m;
   $("#hTitle").textContent = m.title;
   $("#hDesc").textContent = m.overview;
-  if (m.backdrop) $("#hero").style.backgroundImage = `url(${IMG(m.backdrop, "w1280")})`;
+  $("#hero").style.backgroundImage = m.backdrop ? `url("${m.backdrop}")` : "";
 }
 
-function cardHTML(m, playable) {
+const playable = m => !!(m.archive || m.magnetURI);
+
+function card(m) {
   const el = document.createElement("div");
   el.className = "card";
-  el.innerHTML = (m.poster ? `<img loading="lazy" alt="" src="${IMG(m.poster)}">` : "") +
-    `<div class="t">${esc(m.title)}</div>` + (playable ? `<div class="badge">▶ LECTURE</div>` : "");
+  el.innerHTML = (m.poster ? `<img loading="lazy" alt="" src="${esc(m.poster)}" onerror="this.style.display='none'">` : "") +
+    `<div class="t">${esc(m.title)}</div>` + (playable(m) ? `<div class="badge">▶ LECTURE</div>` : "");
   el.onclick = () => openInfo(m);
   return el;
 }
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 function render() {
   const q = $("#search").value.trim().toLowerCase();
-  const f = list => list.filter(m => m.title.toLowerCase().includes(q));
-  const fill = (id, list, playable) => {
-    const g = $(id); g.innerHTML = "";
-    if (!list.length) { g.innerHTML = `<div class="empty">Aucun résultat.</div>`; return; }
-    list.forEach(m => g.appendChild(cardHTML(m, playable)));
+  const fill = (sel, list, emptyMsg) => {
+    const g = $(sel); g.innerHTML = "";
+    const l = list.filter(m => m.title.toLowerCase().includes(q));
+    if (!l.length) { g.innerHTML = `<div class="empty">${emptyMsg}</div>`; return; }
+    l.forEach(m => g.appendChild(card(m)));
   };
-  fill("#gridLib", f(movies), true);
-  fill("#gridTrend", f(trending), false);
+  fill("#gridLib", library, q ? "Aucun résultat." : "Vide pour l'instant : ajoute un film avec le bouton ＋ ou clique sur un film d'« Explorer ».");
+  fill("#gridExplore", explore, "Aucun résultat.");
+  fill("#gridTrend", trending, "Aucun résultat.");
 }
-$("#search").addEventListener("input", render);   // filtre en direct
-
-/* Barre de nav opaque au scroll */
+$("#search").addEventListener("input", render);                 // filtre en direct
 addEventListener("scroll", () => $("#nav").classList.toggle("solid", scrollY > 40));
 
 /* =====================================================================
-   6) MODALE INFOS
+   7) MODALE INFOS
    ===================================================================== */
 function openInfo(m) {
-  $("#iBd").style.backgroundImage = m.backdrop ? `url(${IMG(m.backdrop, "w780")})` : "";
+  $("#iBd").style.backgroundImage = m.backdrop ? `url("${m.backdrop}")` : "";
   $("#iTitle").textContent = m.title;
-  $("#iMeta").textContent = m.year;
+  $("#iMeta").textContent = m.year + (m.archive ? " · archive.org" : "");
   $("#iDesc").textContent = m.overview;
   const act = $("#iAct"); act.innerHTML = "";
-  const lib = movies.find(x => x.tmdbId === m.tmdbId);   // lisible seulement si dans la bibliothèque
-  if (lib) {
-    const b = document.createElement("button");
-    b.className = "btn play"; b.textContent = "▶ Lecture";
-    b.onclick = () => { closeAll(); play(lib); };
-    act.appendChild(b);
-  } else act.innerHTML = `<span style="color:var(--mut)">Pas dans ta bibliothèque (ajoute son magnetURI dans LIBRARY).</span>`;
+  const btn = (txt, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.textContent = txt; b.onclick = fn; act.appendChild(b); };
+
+  if (playable(m)) btn("▶ Lecture", "play", () => { closeAll(); play(m); });
+  if (m.src === "explore") btn("＋ Ma bibliothèque", "info", () => addMine(m.archive, m.title));
+  if (m.mine) btn("🗑 Supprimer", "info", () => removeMine(m.archive));
+  if (m.src === "trend") btn("🔎 Chercher sur archive.org", "info", () => { closeAll(); openAdd(m.title, true); });
+
   $("#info").classList.add("open");
 }
-$("#hPlay").onclick = () => heroMovie && play(heroMovie);
+$("#hPlay").onclick = () => heroMovie && (playable(heroMovie) ? play(heroMovie) : openInfo(heroMovie));
 $("#hInfo").onclick = () => heroMovie && openInfo(heroMovie);
 document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => $("#info").classList.remove("open"));
 $("#info").addEventListener("click", e => { if (e.target.id === "info") $("#info").classList.remove("open"); });
 
 /* =====================================================================
-   7) LECTEUR WEBTORRENT (P2P)
+   8) MODALE AJOUT (recherche archive.org ou lien direct)
    ===================================================================== */
-let client = null, current = null;
+const msg = t => $("#aMsg").textContent = t;
+const closeAdd = () => $("#add").classList.remove("open");
+const closeAll = () => { $("#info").classList.remove("open"); closeAdd(); };
+
+function openAdd(query = "", auto = false) {
+  msg(""); $("#aRes").innerHTML = ""; $("#aUrl").value = ""; $("#aQ").value = query;
+  $("#add").classList.add("open");
+  if (auto && query) searchIA();
+}
+$("#addBtn").onclick = () => openAdd();
+$("#aClose").onclick = closeAdd;
+$("#add").addEventListener("click", e => { if (e.target.id === "add") closeAdd(); });
+
+async function searchIA() {
+  const q = $("#aQ").value.trim().replace(/["\\()]/g, " ");
+  if (!q) return;
+  const box = $("#aRes"); box.innerHTML = `<div class="empty">Recherche…</div>`; msg("");
+  try {
+    let docs = await iaSearch(`title:(${q}) AND mediatype:movies AND collection:feature_films`, 12);
+    if (!docs.length) docs = await iaSearch(`title:(${q}) AND mediatype:movies`, 12);   // élargit si rien
+    box.innerHTML = docs.length ? "" : `<div class="empty">Aucun résultat sur archive.org.</div>`;
+    docs.forEach(d => {
+      const row = document.createElement("div"); row.className = "res";
+      row.innerHTML = `<img alt="" loading="lazy" src="${thumb(d.identifier)}"><div class="rt">${esc(d.title || d.identifier)}<br><small>${esc(String(d.year || ""))}</small></div>`;
+      const b = document.createElement("button"); b.className = "ibtn"; b.textContent = "＋ Ajouter";
+      b.onclick = () => addMine(d.identifier, d.title || d.identifier);
+      row.appendChild(b); box.appendChild(row);
+    });
+  } catch (e) { box.innerHTML = ""; msg("Erreur de connexion à archive.org."); }
+}
+$("#aGo").onclick = searchIA;
+$("#aQ").addEventListener("keydown", e => { if (e.key === "Enter") searchIA(); });
+
+// Ajout par lien ou identifiant
+$("#aUrlGo").onclick = async () => {
+  const v = $("#aUrl").value.trim(); if (!v) return;
+  const m = v.match(/archive\.org\/(?:details|download|embed)\/([^/?#]+)/);
+  const id = decodeURIComponent(m ? m[1] : v);
+  msg("Vérification…");
+  try {
+    const j = await (await fetch(`${IA}/metadata/${encodeURIComponent(id)}`)).json();
+    if (!j.metadata) return msg("Identifiant introuvable sur archive.org.");
+    addMine(id, clean(j.metadata.title) || id);
+  } catch (e) { msg("Erreur de connexion à archive.org."); }
+};
+
+/* =====================================================================
+   9) LECTEUR (archive.org en direct, WebTorrent en option)
+   ===================================================================== */
 const vid = $("#vid");
+let client = null, current = null, tok = 0;
+
+function showLoader(txt, pct) {
+  $("#loader").style.display = "block";
+  $("#ltxt").textContent = txt;
+  if (pct != null) $("#lfill").style.width = pct + "%";
+}
 
 function play(m) {
-  if (typeof WebTorrent === "undefined") { alert("WebTorrent n'a pas pu se charger (réseau/CDN)."); return; }
-  closePlayer();                                   // nettoie une lecture précédente
+  closePlayer();
+  const my = ++tok;
   $("#player").classList.add("open");
   $("#ptitle").textContent = m.title;
-  $("#pstats").textContent = "";
-  $("#perr").textContent = "";
-  $("#loader").style.display = "block";
-  $("#ltxt").textContent = "Connexion aux pairs…";
-  $("#lfill").style.width = "0%";
+  $("#pstats").textContent = ""; $("#perr").textContent = "";
+  showLoader("Chargement…", 0);
+  if (m.archive) playArchive(m, my); else playMagnet(m);
+}
 
+/* --- archive.org : on cherche le meilleur fichier vidéo puis on le lit directement --- */
+async function playArchive(m, my) {
+  try {
+    const j = await (await fetch(`${IA}/metadata/${encodeURIComponent(m.archive)}`)).json();
+    if (my !== tok) return;
+    const files = (j.files || []).filter(f => /\.(mp4|m4v|webm|ogv)$/i.test(f.name) && !/sample|trailer/i.test(f.name));
+    if (!files.length) throw new Error("Aucune vidéo lisible dans cet item (format .mkv/.avi non supporté par les navigateurs, ou accès restreint).");
+    // Préfère le MP4 « dérivé » (compatible navigateur), puis le plus gros
+    const score = f => (/\.mp4$/i.test(f.name) ? 2 : 0) + (f.source === "derivative" ? 1 : 0);
+    files.sort((a, b) => score(b) - score(a) || (+b.size || 0) - (+a.size || 0));
+    vid.src = `${IA}/download/${encodeURIComponent(m.archive)}/${files[0].name.split("/").map(encodeURIComponent).join("/")}`;
+    vid.play().catch(() => {});
+  } catch (e) {
+    if (my === tok) { $("#perr").textContent = e.message || "Impossible de charger ce film."; $("#ltxt").textContent = "Erreur"; }
+  }
+}
+vid.addEventListener("progress", () => {              // barre de buffer
+  if (!vid.duration || !vid.buffered.length) return;
+  const p = Math.round(vid.buffered.end(vid.buffered.length - 1) / vid.duration * 100);
+  $("#lfill").style.width = p + "%";
+  $("#pstats").textContent = `Mis en mémoire : ${p}%`;
+});
+vid.addEventListener("playing", () => $("#loader").style.display = "none");
+vid.addEventListener("waiting", () => showLoader("Mise en mémoire tampon…"));
+vid.addEventListener("error", () => { if (vid.getAttribute("src")) { showLoader("Erreur"); $("#perr").textContent = "Lecture impossible (fichier indisponible ou accès restreint)."; } });
+
+/* --- WebTorrent (optionnel) --- */
+function playMagnet(m) {
+  if (typeof WebTorrent === "undefined") { $("#perr").textContent = "WebTorrent n'a pas pu se charger."; return; }
   client = client || new WebTorrent();
-  client.on("error", e => $("#perr").textContent = "Erreur : " + e.message);
-
+  showLoader("Connexion aux pairs…", 0);
   current = client.add(m.magnetURI, torrent => {
-    // Choisit le plus gros fichier vidéo lisible par le navigateur
-    const file = torrent.files
-      .filter(f => /\.(mp4|m4v|webm|ogv)$/i.test(f.name))
-      .sort((a, b) => b.length - a.length)[0];
-    if (!file) { $("#perr").textContent = "Aucun fichier .mp4/.webm trouvé (le .mkv n'est pas lisible par les navigateurs)."; return; }
+    const file = torrent.files.filter(f => /\.(mp4|m4v|webm|ogv)$/i.test(f.name)).sort((a, b) => b.length - a.length)[0];
+    if (!file) { $("#perr").textContent = "Aucun .mp4/.webm trouvé dans ce torrent."; return; }
     file.renderTo(vid, { autoplay: true }, err => { if (err) $("#perr").textContent = err.message; });
   });
-
-  // Progression du téléchargement / buffer P2P
-  const tick = () => {
-    if (!current) return;
+  current.on("download", () => {
     const p = Math.round(current.progress * 100);
     $("#lfill").style.width = p + "%";
-    $("#ltxt").textContent = `Mise en mémoire tampon… ${p}%`;
     $("#pstats").textContent = `${current.numPeers} pairs · ↓ ${(current.downloadSpeed / 1048576).toFixed(2)} Mo/s · ${p}%`;
-  };
-  current.on("download", tick);
-  vid.onplaying = () => $("#loader").style.display = "none";
-  vid.onwaiting = () => { $("#loader").style.display = "block"; };
+  });
   current.on("error", e => $("#perr").textContent = e.message);
-  // Message si personne ne répond
-  setTimeout(() => { if (current && current.numPeers === 0) $("#perr").textContent = "Aucun pair trouvé… (torrent peu actif ?)"; }, 20000);
 }
 
 function closePlayer() {
+  tok++;
   vid.pause(); vid.removeAttribute("src"); vid.load();
   if (client && current) { try { client.remove(current); } catch (e) {} }
   current = null;
   $("#player").classList.remove("open");
 }
 $("#pClose").onclick = closePlayer;
-const closeAll = () => { $("#info").classList.remove("open"); };
 
 /* =====================================================================
-   8) VIE PRIVÉE — verrouillage SANS mot de passe
-   - Geste "maintenir pour entrer" (évite l'ouverture accidentelle)
-   - Verrou instantané : bouton 🔒, double Échap, onglet masqué
-   - Verrou auto après inactivité
-   - Flou quand la fenêtre perd le focus
-   - Coupe la lecture et ferme les connexions P2P au verrouillage
+   10) VIE PRIVÉE — verrouillage SANS mot de passe
    ===================================================================== */
-function lock() {
-  closePlayer(); closeAll();
-  document.body.classList.add("locked");
-  document.title = "Nouvel onglet";                // titre neutre
-}
-function unlock() {
-  document.body.classList.remove("locked");
-  document.title = "MaisonFlix";
-  resetIdle();
-}
+function lock() { closePlayer(); closeAll(); document.body.classList.add("locked"); document.title = "Nouvel onglet"; }
+function unlock() { document.body.classList.remove("locked"); document.title = "MaisonFlix"; resetIdle(); }
 $("#lockBtn").onclick = lock;
 
-// Bouton "maintenir"
+// Bouton « maintenir pour entrer »
 (function () {
   const btn = $("#holdBtn"), bar = btn.querySelector("i");
-  let t0 = 0, raf = 0;
-  const HOLD = 1200;
-  const step = () => {
-    const p = Math.min((performance.now() - t0) / HOLD, 1);
-    bar.style.width = p * 100 + "%";
-    if (p >= 1) { stop(); unlock(); } else raf = requestAnimationFrame(step);
-  };
+  let t0 = 0, raf = 0; const HOLD = 1200;
+  const step = () => { const p = Math.min((performance.now() - t0) / HOLD, 1); bar.style.width = p * 100 + "%"; if (p >= 1) { stop(); unlock(); } else raf = requestAnimationFrame(step); };
   const start = e => { e.preventDefault(); t0 = performance.now(); raf = requestAnimationFrame(step); };
   const stop = () => { cancelAnimationFrame(raf); bar.style.width = "0"; };
   btn.addEventListener("pointerdown", start);
@@ -363,23 +509,21 @@ $("#lockBtn").onclick = lock;
 
 // Double Échap = verrou panique
 let lastEsc = 0;
-addEventListener("keydown", e => {
-  if (e.key === "Escape") { const n = Date.now(); if (n - lastEsc < 600) lock(); lastEsc = n; }
-});
+addEventListener("keydown", e => { if (e.key === "Escape") { const n = Date.now(); if (n - lastEsc < 600) lock(); lastEsc = n; } });
 
-// Onglet masqué → verrou ; fenêtre non focus → flou
+// Onglet masqué → verrou ; fenêtre sans focus → flou
 document.addEventListener("visibilitychange", () => { if (document.hidden) lock(); });
 addEventListener("blur", () => $("#app").style.filter = "blur(18px)");
 addEventListener("focus", () => $("#app").style.filter = "");
 
-// Verrou auto après inactivité
+// Verrou auto après inactivité (pas pendant un film)
 let idle;
 function resetIdle() { clearTimeout(idle); idle = setTimeout(lock, CONFIG.AUTOLOCK_MIN * 60000); }
-["mousemove", "keydown", "touchstart", "click", "play"].forEach(ev => addEventListener(ev, resetIdle, true));
-vid.addEventListener("timeupdate", resetIdle);     // ne verrouille pas pendant un film
+["mousemove", "keydown", "touchstart", "click"].forEach(ev => addEventListener(ev, resetIdle, true));
+vid.addEventListener("timeupdate", resetIdle);
 
 /* =====================================================================
-   9) DÉMARRAGE
+   11) DÉMARRAGE
    ===================================================================== */
 loadData();
 </script>
