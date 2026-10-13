@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Vie privée : pas d'indexation, pas de fuite de referrer -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>MaisonFlix</title>
+<script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+<style>
+:root{--bg:#141414;--red:#e50914;--txt:#fff;--mut:#b3b3b3;--pad:4vw}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:"Segoe UI",Helvetica,Arial,sans-serif;min-height:100vh;overflow-x:hidden}
+button{font:inherit;cursor:pointer;border:0}
+
+/* ---------- ÉCRAN DE VERROUILLAGE (sans mot de passe) ---------- */
+#lock{position:fixed;inset:0;z-index:1000;background:radial-gradient(circle at 50% 40%,#2a0507,#000 70%);
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;text-align:center;padding:20px}
+body.locked #lock{display:flex}
+body.locked #app{display:none}
+#lock p{color:var(--mut);max-width:340px}
+#holdBtn{position:relative;overflow:hidden;width:min(280px,80vw);padding:16px;border-radius:50px;background:#2b2b2b;color:#fff;font-size:1.05rem;user-select:none;touch-action:none}
+#holdBtn i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--red);z-index:0}
+#holdBtn span{position:relative;z-index:1}
+
+/* ---------- LOGO / NAV ---------- */
+.logo{font-weight:900;letter-spacing:2px;color:var(--red);font-size:clamp(1.3rem,3vw,2rem);text-transform:uppercase;text-shadow:0 2px 8px #0008}
+nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:16px;padding:14px var(--pad);
+  background:linear-gradient(#000c,transparent);transition:background .3s}
+nav.solid{background:#141414f2}
+nav .sp{flex:1}
+#search{background:#000a;border:1px solid #fff5;color:#fff;padding:9px 14px;border-radius:4px;width:min(260px,40vw);outline:0}
+#search:focus{border-color:#fff}
+.ibtn{background:#ffffff1a;color:#fff;padding:9px 13px;border-radius:4px}
+.ibtn:hover{background:#ffffff33}
+
+/* ---------- HERO ---------- */
+#hero{position:relative;min-height:75vh;display:flex;align-items:flex-end;padding:0 var(--pad) 8vh;background:#222 center/cover no-repeat}
+#hero::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,var(--bg) 3%,transparent 60%),linear-gradient(to right,#000c,transparent 70%)}
+.hero-in{position:relative;z-index:2;max-width:560px}
+.hero-in h1{font-size:clamp(2rem,6vw,4rem);margin-bottom:12px;text-shadow:0 2px 10px #000}
+.hero-in p{color:#ddd;font-size:clamp(.9rem,1.6vw,1.15rem);line-height:1.45;margin-bottom:20px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.btn{padding:11px 26px;border-radius:4px;font-weight:700;font-size:1rem;margin-right:10px}
+.btn.play{background:#fff;color:#000}.btn.play:hover{background:#ddd}
+.btn.info{background:#6d6d6eb3;color:#fff}.btn.info:hover{background:#6d6d6e66}
+
+/* ---------- GRILLES ---------- */
+main{padding:0 var(--pad) 60px;position:relative;z-index:3;margin-top:-4vh}
+h2{margin:28px 0 12px;font-size:clamp(1.1rem,2vw,1.5rem)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.card{position:relative;aspect-ratio:2/3;border-radius:6px;overflow:hidden;background:linear-gradient(135deg,#333,#1a1a1a);cursor:pointer;
+  transition:transform .25s,box-shadow .25s}
+.card img{width:100%;height:100%;object-fit:cover;display:block}
+.card .t{position:absolute;inset:auto 0 0 0;padding:30px 8px 8px;font-size:.85rem;font-weight:600;background:linear-gradient(transparent,#000d)}
+.card .badge{position:absolute;top:6px;left:6px;background:var(--red);font-size:.65rem;padding:2px 6px;border-radius:3px;font-weight:700}
+@media (hover:hover){.card:hover{transform:scale(1.12);z-index:10;box-shadow:0 10px 30px #000c}}
+.empty{color:var(--mut);padding:20px 0}
+
+/* ---------- MODALES ---------- */
+.modal{position:fixed;inset:0;z-index:200;background:#000d;display:none;align-items:center;justify-content:center;padding:16px}
+.modal.open{display:flex}
+#info .box{background:#181818;border-radius:10px;max-width:760px;width:100%;max-height:90vh;overflow:auto;position:relative}
+#info .bd{height:min(42vw,340px);background:#222 center/cover}
+#info .tx{padding:20px 24px 26px}
+#info .tx h3{font-size:1.6rem;margin-bottom:8px}
+#info .tx .meta{color:#46d369;font-weight:600;margin-bottom:12px;font-size:.9rem}
+#info .tx p{line-height:1.5;color:#ddd;margin-bottom:16px}
+.x{position:absolute;top:10px;right:12px;width:38px;height:38px;border-radius:50%;background:#000b;color:#fff;font-size:1.3rem;z-index:5}
+
+/* Lecteur immersif */
+#player{background:#000;padding:0;flex-direction:column}
+#player video{width:100%;height:100%;max-height:100vh;background:#000;outline:0}
+#pbar{position:absolute;top:0;left:0;right:0;padding:16px 70px 30px 20px;background:linear-gradient(#000d,transparent);z-index:3;pointer-events:none}
+#ptitle{font-size:1.1rem;font-weight:700}
+#pstats{color:var(--mut);font-size:.8rem;margin-top:4px}
+#loader{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,80vw);text-align:center;z-index:4;pointer-events:none}
+#loader .track{height:6px;background:#fff3;border-radius:3px;overflow:hidden;margin-top:12px}
+#loader .fill{height:100%;width:0;background:var(--red);transition:width .3s}
+#perr{color:#ff6b6b;margin-top:10px}
+
+footer{color:#666;text-align:center;font-size:.75rem;padding:30px 20px}
+@media (max-width:600px){.grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px}#hero{min-height:65vh}}
+@media (min-width:1900px){html{font-size:20px}.grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}} /* grands écrans / TV */
+</style>
+</head>
+<body class="locked">
+
+<!-- ================= ÉCRAN DE VERROUILLAGE ================= -->
+<div id="lock">
+  <div class="logo" style="font-size:2.6rem">MaisonFlix</div>
+  <p>Écran privé. Maintiens le bouton enfoncé pour entrer.</p>
+  <button id="holdBtn"><i></i><span>🔓 Maintenir pour entrer</span></button>
+</div>
+
+<!-- ================= APPLICATION ================= -->
+<div id="app">
+  <nav id="nav">
+    <div class="logo">MaisonFlix</div>
+    <div class="sp"></div>
+    <input id="search" type="search" placeholder="Rechercher un titre…" autocomplete="off">
+    <button class="ibtn" id="lockBtn" title="Verrouiller (ou Échap ×2)">🔒</button>
+  </nav>
+
+  <header id="hero">
+    <div class="hero-in">
+      <h1 id="hTitle">Bienvenue</h1>
+      <p id="hDesc">Chargement…</p>
+      <button class="btn play" id="hPlay">▶ Lecture</button>
+      <button class="btn info" id="hInfo">ⓘ Plus d'infos</button>
+    </div>
+  </header>
+
+  <main>
+    <h2>Ma bibliothèque</h2>
+    <div class="grid" id="gridLib"></div>
+    <div id="trendWrap">
+      <h2>Tendances TMDB</h2>
+      <div class="grid" id="gridTrend"></div>
+    </div>
+  </main>
+  <footer>Usage personnel · Ne diffuse que des contenus dont tu détiens les droits ou libres de droits.<br>Ce produit utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB.</footer>
+</div>
+
+<!-- Modale infos -->
+<div class="modal" id="info">
+  <div class="box">
+    <button class="x" data-close>✕</button>
+    <div class="bd" id="iBd"></div>
+    <div class="tx">
+      <h3 id="iTitle"></h3><div class="meta" id="iMeta"></div>
+      <p id="iDesc"></p><div id="iAct"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modale lecteur -->
+<div class="modal" id="player">
+  <button class="x" id="pClose">✕</button>
+  <div id="pbar"><div id="ptitle"></div><div id="pstats"></div></div>
+  <div id="loader"><div id="ltxt">Connexion au réseau P2P…</div><div class="track"><div class="fill" id="lfill"></div></div><div id="perr"></div></div>
+  <video id="vid" controls playsinline></video>
+</div>
+
+<script>
+/* =====================================================================
+   1) CONFIGURATION  ← METS TA CLÉ API TMDB ICI
+   ===================================================================== */
+const CONFIG = {
+  TMDB_KEY: "",              // ← colle ta clé API TMDB (v3) entre les guillemets
+  LANG: "fr-FR",
+  AUTOLOCK_MIN: 5            // verrouillage auto après X minutes d'inactivité
+};
+
+/* =====================================================================
+   2) TA BIBLIOTHÈQUE  (ID TMDB + magnetURI)
+   Exemples = films libres de droits fournis par WebTorrent/Blender.
+   Remplace/ajoute les tiens (fichiers en .mp4 / .webm de préférence).
+   Trackers "wss://" obligatoires pour que le navigateur trouve des pairs.
+   ===================================================================== */
+const WSS = "&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=wss%3A%2F%2Ftracker.fastcast.nz&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2F";
+const LIBRARY = [
+  { tmdbId: 10378,  title: "Big Buck Bunny",  magnetURI: "magnet:?xt=urn:btih:dd8255ecdc7ca55fb0bbf81323d87062db1f6d1c&dn=Big+Buck+Bunny" + WSS },
+  { tmdbId: 45745,  title: "Sintel",          magnetURI: "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=Sintel" + WSS },
+  { tmdbId: 133701, title: "Tears of Steel",  magnetURI: "magnet:?xt=urn:btih:209c8226b299b308beaf2b9cd3fb49212dbd13ec&dn=Tears+of+Steel" + WSS },
+  { tmdbId: 296672, title: "Cosmos Laundromat", magnetURI: "magnet:?xt=urn:btih:c9e15763f722f23e98a29decdfae341b98d53056&dn=Cosmos+Laundromat" + WSS }
+  // , { tmdbId: 123, title: "Mon film", magnetURI: "magnet:?xt=urn:btih:..." }
+];
+
+/* =====================================================================
+   3) OUTILS
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const IMG = (p, size = "w500") => p ? `https://image.tmdb.org/t/p/${size}${p}` : "";
+let movies = [];      // bibliothèque enrichie par TMDB
+let trending = [];    // tendances TMDB
+
+async function tmdb(path, params = "") {
+  const r = await fetch(`https://api.themoviedb.org/3${path}?api_key=${CONFIG.TMDB_KEY}&language=${CONFIG.LANG}${params}`);
+  if (!r.ok) throw new Error("TMDB " + r.status);
+  return r.json();
+}
+
+/* =====================================================================
+   4) CHARGEMENT DES DONNÉES
+   ===================================================================== */
+async function loadData() {
+  // Bibliothèque : on enrichit chaque entrée avec les infos TMDB
+  movies = await Promise.all(LIBRARY.map(async m => {
+    const base = { ...m, overview: "Aucun résumé (ajoute ta clé TMDB).", poster: "", backdrop: "", year: "" };
+    if (!CONFIG.TMDB_KEY) return base;
+    try {
+      const d = await tmdb(`/movie/${m.tmdbId}`);
+      return { ...base, title: d.title || m.title, overview: d.overview || base.overview,
+               poster: d.poster_path, backdrop: d.backdrop_path, year: (d.release_date || "").slice(0, 4) };
+    } catch (e) { return base; }
+  }));
+  // Tendances de la semaine
+  if (CONFIG.TMDB_KEY) {
+    try {
+      const t = await tmdb("/trending/movie/week");
+      trending = t.results.map(d => ({ tmdbId: d.id, title: d.title, overview: d.overview || "Pas de résumé.",
+        poster: d.poster_path, backdrop: d.backdrop_path, year: (d.release_date || "").slice(0, 4) }));
+    } catch (e) { console.warn(e); }
+  } else {
+    $("#trendWrap").style.display = "none";
+  }
+  setHero(movies[0]);
+  render();
+}
+
+/* =====================================================================
+   5) AFFICHAGE
+   ===================================================================== */
+let heroMovie = null;
+function setHero(m) {
+  if (!m) return;
+  heroMovie = m;
+  $("#hTitle").textContent = m.title;
+  $("#hDesc").textContent = m.overview;
+  if (m.backdrop) $("#hero").style.backgroundImage = `url(${IMG(m.backdrop, "w1280")})`;
+}
+
+function cardHTML(m, playable) {
+  const el = document.createElement("div");
+  el.className = "card";
+  el.innerHTML = (m.poster ? `<img loading="lazy" alt="" src="${IMG(m.poster)}">` : "") +
+    `<div class="t">${esc(m.title)}</div>` + (playable ? `<div class="badge">▶ LECTURE</div>` : "");
+  el.onclick = () => openInfo(m);
+  return el;
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function render() {
+  const q = $("#search").value.trim().toLowerCase();
+  const f = list => list.filter(m => m.title.toLowerCase().includes(q));
+  const fill = (id, list, playable) => {
+    const g = $(id); g.innerHTML = "";
+    if (!list.length) { g.innerHTML = `<div class="empty">Aucun résultat.</div>`; return; }
+    list.forEach(m => g.appendChild(cardHTML(m, playable)));
+  };
+  fill("#gridLib", f(movies), true);
+  fill("#gridTrend", f(trending), false);
+}
+$("#search").addEventListener("input", render);   // filtre en direct
+
+/* Barre de nav opaque au scroll */
+addEventListener("scroll", () => $("#nav").classList.toggle("solid", scrollY > 40));
+
+/* =====================================================================
+   6) MODALE INFOS
+   ===================================================================== */
+function openInfo(m) {
+  $("#iBd").style.backgroundImage = m.backdrop ? `url(${IMG(m.backdrop, "w780")})` : "";
+  $("#iTitle").textContent = m.title;
+  $("#iMeta").textContent = m.year;
+  $("#iDesc").textContent = m.overview;
+  const act = $("#iAct"); act.innerHTML = "";
+  const lib = movies.find(x => x.tmdbId === m.tmdbId);   // lisible seulement si dans la bibliothèque
+  if (lib) {
+    const b = document.createElement("button");
+    b.className = "btn play"; b.textContent = "▶ Lecture";
+    b.onclick = () => { closeAll(); play(lib); };
+    act.appendChild(b);
+  } else act.innerHTML = `<span style="color:var(--mut)">Pas dans ta bibliothèque (ajoute son magnetURI dans LIBRARY).</span>`;
+  $("#info").classList.add("open");
+}
+$("#hPlay").onclick = () => heroMovie && play(heroMovie);
+$("#hInfo").onclick = () => heroMovie && openInfo(heroMovie);
+document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => $("#info").classList.remove("open"));
+$("#info").addEventListener("click", e => { if (e.target.id === "info") $("#info").classList.remove("open"); });
+
+/* =====================================================================
+   7) LECTEUR WEBTORRENT (P2P)
+   ===================================================================== */
+let client = null, current = null;
+const vid = $("#vid");
+
+function play(m) {
+  if (typeof WebTorrent === "undefined") { alert("WebTorrent n'a pas pu se charger (réseau/CDN)."); return; }
+  closePlayer();                                   // nettoie une lecture précédente
+  $("#player").classList.add("open");
+  $("#ptitle").textContent = m.title;
+  $("#pstats").textContent = "";
+  $("#perr").textContent = "";
+  $("#loader").style.display = "block";
+  $("#ltxt").textContent = "Connexion aux pairs…";
+  $("#lfill").style.width = "0%";
+
+  client = client || new WebTorrent();
+  client.on("error", e => $("#perr").textContent = "Erreur : " + e.message);
+
+  current = client.add(m.magnetURI, torrent => {
+    // Choisit le plus gros fichier vidéo lisible par le navigateur
+    const file = torrent.files
+      .filter(f => /\.(mp4|m4v|webm|ogv)$/i.test(f.name))
+      .sort((a, b) => b.length - a.length)[0];
+    if (!file) { $("#perr").textContent = "Aucun fichier .mp4/.webm trouvé (le .mkv n'est pas lisible par les navigateurs)."; return; }
+    file.renderTo(vid, { autoplay: true }, err => { if (err) $("#perr").textContent = err.message; });
+  });
+
+  // Progression du téléchargement / buffer P2P
+  const tick = () => {
+    if (!current) return;
+    const p = Math.round(current.progress * 100);
+    $("#lfill").style.width = p + "%";
+    $("#ltxt").textContent = `Mise en mémoire tampon… ${p}%`;
+    $("#pstats").textContent = `${current.numPeers} pairs · ↓ ${(current.downloadSpeed / 1048576).toFixed(2)} Mo/s · ${p}%`;
+  };
+  current.on("download", tick);
+  vid.onplaying = () => $("#loader").style.display = "none";
+  vid.onwaiting = () => { $("#loader").style.display = "block"; };
+  current.on("error", e => $("#perr").textContent = e.message);
+  // Message si personne ne répond
+  setTimeout(() => { if (current && current.numPeers === 0) $("#perr").textContent = "Aucun pair trouvé… (torrent peu actif ?)"; }, 20000);
+}
+
+function closePlayer() {
+  vid.pause(); vid.removeAttribute("src"); vid.load();
+  if (client && current) { try { client.remove(current); } catch (e) {} }
+  current = null;
+  $("#player").classList.remove("open");
+}
+$("#pClose").onclick = closePlayer;
+const closeAll = () => { $("#info").classList.remove("open"); };
+
+/* =====================================================================
+   8) VIE PRIVÉE — verrouillage SANS mot de passe
+   - Geste "maintenir pour entrer" (évite l'ouverture accidentelle)
+   - Verrou instantané : bouton 🔒, double Échap, onglet masqué
+   - Verrou auto après inactivité
+   - Flou quand la fenêtre perd le focus
+   - Coupe la lecture et ferme les connexions P2P au verrouillage
+   ===================================================================== */
+function lock() {
+  closePlayer(); closeAll();
+  document.body.classList.add("locked");
+  document.title = "Nouvel onglet";                // titre neutre
+}
+function unlock() {
+  document.body.classList.remove("locked");
+  document.title = "MaisonFlix";
+  resetIdle();
+}
+$("#lockBtn").onclick = lock;
+
+// Bouton "maintenir"
+(function () {
+  const btn = $("#holdBtn"), bar = btn.querySelector("i");
+  let t0 = 0, raf = 0;
+  const HOLD = 1200;
+  const step = () => {
+    const p = Math.min((performance.now() - t0) / HOLD, 1);
+    bar.style.width = p * 100 + "%";
+    if (p >= 1) { stop(); unlock(); } else raf = requestAnimationFrame(step);
+  };
+  const start = e => { e.preventDefault(); t0 = performance.now(); raf = requestAnimationFrame(step); };
+  const stop = () => { cancelAnimationFrame(raf); bar.style.width = "0"; };
+  btn.addEventListener("pointerdown", start);
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, stop));
+})();
+
+// Double Échap = verrou panique
+let lastEsc = 0;
+addEventListener("keydown", e => {
+  if (e.key === "Escape") { const n = Date.now(); if (n - lastEsc < 600) lock(); lastEsc = n; }
+});
+
+// Onglet masqué → verrou ; fenêtre non focus → flou
+document.addEventListener("visibilitychange", () => { if (document.hidden) lock(); });
+addEventListener("blur", () => $("#app").style.filter = "blur(18px)");
+addEventListener("focus", () => $("#app").style.filter = "");
+
+// Verrou auto après inactivité
+let idle;
+function resetIdle() { clearTimeout(idle); idle = setTimeout(lock, CONFIG.AUTOLOCK_MIN * 60000); }
+["mousemove", "keydown", "touchstart", "click", "play"].forEach(ev => addEventListener(ev, resetIdle, true));
+vid.addEventListener("timeupdate", resetIdle);     // ne verrouille pas pendant un film
+
+/* =====================================================================
+   9) DÉMARRAGE
+   ===================================================================== */
+loadData();
+</script>
+</body>
+</html>
