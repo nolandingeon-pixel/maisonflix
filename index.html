@@ -15,9 +15,8 @@ html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--txt);font-family:"Segoe UI",Helvetica,Arial,sans-serif;min-height:100vh;overflow-x:hidden}
 button{font:inherit;cursor:pointer;border:0}
 
-/* ---------- ÉCRAN DE VERROUILLAGE (sans mot de passe) ---------- */
-#lock{position:fixed;inset:0;z-index:1000;background:radial-gradient(circle at 50% 40%,#2a0507,#000 70%);
-  display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;text-align:center;padding:20px}
+/* ---------- ÉCRAN DE VERROUILLAGE ---------- */
+#lock{position:fixed;inset:0;z-index:1000;background:radial-gradient(circle at 50% 40%,#2a0507,#000 70%);display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;text-align:center;padding:20px}
 body.locked #lock{display:flex}
 body.locked #app{display:none}
 #lock p{color:var(--mut);max-width:340px}
@@ -27,8 +26,7 @@ body.locked #app{display:none}
 
 /* ---------- LOGO / NAV ---------- */
 .logo{font-weight:900;letter-spacing:2px;color:var(--red);font-size:clamp(1.3rem,3vw,2rem);text-transform:uppercase;text-shadow:0 2px 8px #0008}
-nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:10px;padding:14px var(--pad);
-  background:linear-gradient(#000c,transparent);transition:background .3s}
+nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:10px;padding:14px var(--pad);background:linear-gradient(#000c,transparent);transition:background .3s}
 nav.solid{background:#141414f2}
 nav .sp{flex:1}
 #search{background:#000a;border:1px solid #fff5;color:#fff;padding:9px 14px;border-radius:4px;width:min(260px,36vw);outline:0}
@@ -68,15 +66,24 @@ h2{margin:28px 0 12px;font-size:clamp(1.1rem,2vw,1.5rem)}
 #info .tx p{line-height:1.5;color:#ddd;margin-bottom:16px}
 .x{position:absolute;top:10px;right:12px;width:38px;height:38px;border-radius:50%;background:#000b;color:#fff;font-size:1.3rem;z-index:5}
 
-/* Formulaire d'ajout */
+/* Formulaires (ajout + demande) */
 .form{background:#181818;border-radius:10px;max-width:560px;width:100%;padding:24px;position:relative;max-height:90vh;overflow:auto}
 .form h3{margin-bottom:6px}
 .form label{display:block;color:var(--mut);font-size:.8rem;margin:16px 0 4px}
 .form input{width:100%;background:#2b2b2b;border:1px solid #444;color:#fff;padding:10px;border-radius:4px}
 .form .row{display:flex;gap:8px}
+.form .hint{color:var(--mut);font-size:.85rem;margin-top:6px;line-height:1.4}
 .res{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #2c2c2c}
 .res img{width:45px;height:68px;object-fit:cover;border-radius:3px;background:#333}
 .res .rt{flex:1;font-size:.9rem}.res .rt small{color:var(--mut)}
+.sep{border-top:1px solid #333;margin-top:18px}
+
+/* Bouton + fenêtre « Demander un film » */
+#reqBtn{position:fixed;right:18px;bottom:18px;z-index:60;background:var(--red);color:#fff;padding:12px 18px;border-radius:50px;font-weight:700;box-shadow:0 6px 20px #000a}
+#reqBtn:hover{background:#f6121d}
+#req .form{max-width:420px}
+#rMsg{margin-top:12px;min-height:1.2em;font-size:.9rem}
+#rMsg.ok{color:#46d369}#rMsg.ko{color:#ff6b6b}
 
 /* Lecteur immersif */
 #player{background:#000;padding:0;flex-direction:column}
@@ -89,7 +96,7 @@ h2{margin:28px 0 12px;font-size:clamp(1.1rem,2vw,1.5rem)}
 #loader .fill{height:100%;width:0;background:var(--red);transition:width .3s}
 #perr{color:#ff6b6b;margin-top:10px}
 
-footer{color:#666;text-align:center;font-size:.75rem;padding:30px 20px}
+footer{color:#666;text-align:center;font-size:.75rem;padding:30px 20px 80px}
 @media (max-width:600px){.grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px}#hero{min-height:65vh}#addBtn span{display:none}}
 @media (min-width:1900px){html{font-size:20px}.grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}}
 </style>
@@ -136,6 +143,20 @@ footer{color:#666;text-align:center;font-size:.75rem;padding:30px 20px}
       <div class="grid" id="gridTrend"></div>
     </div>
   </main>
+
+  <!-- Bouton + fenêtre de demande de film (→ Discord) -->
+  <button id="reqBtn">🎬 Demander un film</button>
+  <div class="modal" id="req">
+    <div class="form">
+      <button class="x" id="rClose">✕</button>
+      <h3>Un film manque ?</h3>
+      <p class="hint">Écris son titre, je regarde si je peux l'ajouter.</p>
+      <label>Titre du film</label>
+      <div class="row"><input id="rTitle" maxlength="100" placeholder="Ex : Insidious" autocomplete="off"><button class="ibtn" id="rSend">Envoyer</button></div>
+      <div id="rMsg"></div>
+    </div>
+  </div>
+
   <footer>Usage personnel · Ne diffuse que des contenus libres de droits ou dont tu détiens les droits.<br>Ce produit utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB.</footer>
 </div>
 
@@ -151,16 +172,25 @@ footer{color:#666;text-align:center;font-size:.75rem;padding:30px 20px}
   </div>
 </div>
 
-<!-- Modale ajout (archive.org) -->
+<!-- Modale ajout (archive.org ou fichier du PC) -->
 <div class="modal" id="add">
   <div class="form">
     <button class="x" id="aClose">✕</button>
-    <h3>Ajouter un film depuis archive.org</h3>
-    <label>Chercher par titre</label>
+    <h3>Ajouter un film</h3>
+
+    <label>Chercher sur archive.org</label>
     <div class="row"><input id="aQ" placeholder="Ex : Nosferatu, Metropolis, Charlie Chaplin…"><button class="ibtn" id="aGo">🔎</button></div>
     <div id="aRes"></div>
+
     <label>… ou colle un lien / identifiant archive.org</label>
     <div class="row"><input id="aUrl" placeholder="https://archive.org/details/xxxxx"><button class="ibtn" id="aUrlGo">Ajouter</button></div>
+
+    <div class="sep"></div>
+    <label>… ou un fichier vidéo de ton PC (.mp4 / .webm)</label>
+    <input id="aFile" type="file" accept="video/mp4,video/webm">
+    <label>Titre du film (sert à trouver l'affiche TMDB)</label>
+    <div class="row"><input id="aTitle" placeholder="Insidious"><button class="ibtn" id="aFileGo">Ajouter</button></div>
+
     <div id="aMsg" class="empty"></div>
   </div>
 </div>
@@ -175,27 +205,25 @@ footer{color:#666;text-align:center;font-size:.75rem;padding:30px 20px}
 
 <script>
 /* =====================================================================
-   1) CONFIGURATION  ← METS TA CLÉ API TMDB ICI (optionnelle)
-   Sans clé : tout marche, avec les vignettes d'archive.org.
-   Avec clé : belles affiches + résumés en français + tendances.
+   1) CONFIGURATION  ← METS TES CLÉS ICI
    ===================================================================== */
 const CONFIG = {
-  TMDB_KEY: "9fe40be6d99b98e9e9ff13351f0ded4d",              // ← colle ta clé API TMDB (v3) entre les guillemets
+  TMDB_KEY: "9fe40be6d99b98e9e9ff13351f0ded4d",              // ← colle ta clé API TMDB (v3) entre les guillemets (optionnel mais conseillé)
   LANG: "fr-FR",
   AUTOLOCK_MIN: 5,           // verrouillage auto après X minutes d'inactivité
-  EXPLORE_COUNT: 24          // nombre de films affichés dans "Explorer archive.org"
+  EXPLORE_COUNT: 24          // nombre de films dans "Explorer archive.org"
 };
+const WEBHOOK_URL = "TON_URL_ICI";   // ← COLLE ICI L'URL DE TON WEBHOOK DISCORD
+const REQ_COOLDOWN_SEC = 60;         // délai minimum entre deux demandes (anti-spam)
 
 /* =====================================================================
-   2) TA BIBLIOTHÈQUE FIXE (optionnel — tu peux aussi tout ajouter via le bouton ＋)
-   - archive.org : { id: "identifiant-archive-org", title: "Titre" }
-     (l'identifiant = la fin de l'URL https://archive.org/details/IDENTIFIANT)
-   - WebTorrent  : { title: "Titre", magnetURI: "magnet:?xt=..." }  (avancé, optionnel)
-   Si un identifiant est incorrect, l'erreur s'affichera au moment de la lecture.
+   2) BIBLIOTHÈQUE FIXE (optionnel — tu peux tout ajouter avec le bouton ＋)
+   archive.org : { id: "identifiant", title: "Titre" }
+   WebTorrent  : { title: "Titre", magnetURI: "magnet:?xt=..." }
    ===================================================================== */
 const LIBRARY = [
-  { id: "night_of_the_living_dead", title: "La Nuit des morts-vivants" },
-  { id: "BigBuckBunny_124",          title: "Big Buck Bunny" }
+  { id: "night_of_the_living_dead", title: "Night of the Living Dead" },
+  { id: "BigBuckBunny_124",        title: "Big Buck Bunny" }
 ];
 
 /* =====================================================================
@@ -226,14 +254,13 @@ async function iaSearch(q, rows = 24) {
   return (await r.json()).response.docs;
 }
 
-/* Transforme un résultat archive.org en objet "film" */
 const fromIA = (d, extra = {}) => ({
   key: "ia:" + d.identifier, archive: d.identifier, title: d.title || d.identifier,
   overview: clean(d.description).slice(0, 600) || "Film du domaine public sur archive.org.",
   year: String(d.year || "").slice(0, 4), poster: thumb(d.identifier), backdrop: thumb(d.identifier), ...extra
 });
 
-/* Si clé TMDB : remplace vignette/résumé par ceux de TMDB (recherche par titre) */
+/* Si clé TMDB : remplace affiche / fond / résumé par ceux de TMDB (recherche par titre) */
 async function enrich(m) {
   if (!CONFIG.TMDB_KEY) return m;
   try {
@@ -243,6 +270,7 @@ async function enrich(m) {
       m.poster = IMG(f.poster_path);
       if (f.backdrop_path) m.backdrop = IMG(f.backdrop_path, "w1280");
       if (f.overview) m.overview = f.overview;
+      if (!m.year && f.release_date) m.year = f.release_date.slice(0, 4);
     }
   } catch (e) {}
   return m;
@@ -268,10 +296,13 @@ function removeMine(id) { saveMine(loadMine().filter(m => m.id !== id)); closeAl
 async function loadData() {
   const entries = [...LIBRARY, ...loadMine().map(m => ({ ...m, mine: true }))];
   library = await Promise.all(entries.map(async e => {
-    const m = { key: e.id ? "ia:" + e.id : "mg:" + e.title, archive: e.id, magnetURI: e.magnetURI, title: e.title,
-      overview: "Aucun résumé disponible.", year: "", poster: e.id ? thumb(e.id) : "", backdrop: e.id ? thumb(e.id) : "", mine: e.mine, src: "lib" };
-    if (e.id) {
-      try {                                       // résumé + année depuis archive.org
+    const ia = e.id && !e.local;                       // film archive.org ?
+    const m = { key: "lib:" + (e.id || e.title), archive: ia ? e.id : undefined,
+      local: !!e.local, localId: e.local ? e.id : undefined, mineId: e.id,
+      magnetURI: e.magnetURI, title: e.title, overview: "Aucun résumé disponible.", year: "",
+      poster: ia ? thumb(e.id) : "", backdrop: ia ? thumb(e.id) : "", mine: e.mine, src: "lib" };
+    if (ia) {
+      try {                                            // résumé + année depuis archive.org
         const md = (await (await fetch(`${IA}/metadata/${encodeURIComponent(e.id)}`)).json()).metadata || {};
         m.overview = clean(md.description).slice(0, 600) || m.overview;
         m.year = String(md.year || md.date || "").slice(0, 4);
@@ -286,7 +317,7 @@ async function loadData() {
 }
 
 async function loadExplore() {
-  if (explore.length) return;                     // une seule fois par session
+  if (explore.length) return;
   try {
     const docs = await iaSearch("collection:feature_films AND mediatype:movies", CONFIG.EXPLORE_COUNT);
     explore = await Promise.all(docs.map(d => enrich(fromIA(d, { src: "explore" }))));
@@ -297,6 +328,7 @@ async function loadExplore() {
 
 async function loadTrending() {
   if (!CONFIG.TMDB_KEY) { $("#trendWrap").style.display = "none"; return; }
+  if (trending.length) return;
   try {
     const t = await tmdb("/trending/movie/week");
     trending = t.results.map(d => ({ key: "tm:" + d.id, title: d.title, overview: d.overview || "Pas de résumé.",
@@ -316,7 +348,7 @@ function setHero(m) {
   $("#hero").style.backgroundImage = m.backdrop ? `url("${m.backdrop}")` : "";
 }
 
-const playable = m => !!(m.archive || m.magnetURI);
+const playable = m => !!(m.archive || m.magnetURI || m.local);
 
 function card(m) {
   const el = document.createElement("div");
@@ -335,7 +367,7 @@ function render() {
     if (!l.length) { g.innerHTML = `<div class="empty">${emptyMsg}</div>`; return; }
     l.forEach(m => g.appendChild(card(m)));
   };
-  fill("#gridLib", library, q ? "Aucun résultat." : "Vide pour l'instant : ajoute un film avec le bouton ＋ ou clique sur un film d'« Explorer ».");
+  fill("#gridLib", library, q ? "Aucun résultat." : "Vide pour l'instant : ajoute un film avec le bouton ＋.");
   fill("#gridExplore", explore, "Aucun résultat.");
   fill("#gridTrend", trending, "Aucun résultat.");
 }
@@ -348,14 +380,14 @@ addEventListener("scroll", () => $("#nav").classList.toggle("solid", scrollY > 4
 function openInfo(m) {
   $("#iBd").style.backgroundImage = m.backdrop ? `url("${m.backdrop}")` : "";
   $("#iTitle").textContent = m.title;
-  $("#iMeta").textContent = m.year + (m.archive ? " · archive.org" : "");
+  $("#iMeta").textContent = m.year + (m.archive ? " · archive.org" : m.local ? " · fichier local" : "");
   $("#iDesc").textContent = m.overview;
   const act = $("#iAct"); act.innerHTML = "";
   const btn = (txt, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.textContent = txt; b.onclick = fn; act.appendChild(b); };
 
   if (playable(m)) btn("▶ Lecture", "play", () => { closeAll(); play(m); });
   if (m.src === "explore") btn("＋ Ma bibliothèque", "info", () => addMine(m.archive, m.title));
-  if (m.mine) btn("🗑 Supprimer", "info", () => removeMine(m.archive));
+  if (m.mine) btn("🗑 Supprimer", "info", () => removeMine(m.mineId));
   if (m.src === "trend") btn("🔎 Chercher sur archive.org", "info", () => { closeAll(); openAdd(m.title, true); });
 
   $("#info").classList.add("open");
@@ -366,14 +398,16 @@ document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => $("#inf
 $("#info").addEventListener("click", e => { if (e.target.id === "info") $("#info").classList.remove("open"); });
 
 /* =====================================================================
-   8) MODALE AJOUT (recherche archive.org ou lien direct)
+   8) MODALE AJOUT (archive.org, lien, fichier local)
    ===================================================================== */
 const msg = t => $("#aMsg").textContent = t;
 const closeAdd = () => $("#add").classList.remove("open");
-const closeAll = () => { $("#info").classList.remove("open"); closeAdd(); };
+const closeReq = () => $("#req").classList.remove("open");
+const closeAll = () => { $("#info").classList.remove("open"); closeAdd(); closeReq(); };
 
 function openAdd(query = "", auto = false) {
   msg(""); $("#aRes").innerHTML = ""; $("#aUrl").value = ""; $("#aQ").value = query;
+  $("#aFile").value = ""; $("#aTitle").value = "";
   $("#add").classList.add("open");
   if (auto && query) searchIA();
 }
@@ -387,7 +421,7 @@ async function searchIA() {
   const box = $("#aRes"); box.innerHTML = `<div class="empty">Recherche…</div>`; msg("");
   try {
     let docs = await iaSearch(`title:(${q}) AND mediatype:movies AND collection:feature_films`, 12);
-    if (!docs.length) docs = await iaSearch(`title:(${q}) AND mediatype:movies`, 12);   // élargit si rien
+    if (!docs.length) docs = await iaSearch(`title:(${q}) AND mediatype:movies`, 12);
     box.innerHTML = docs.length ? "" : `<div class="empty">Aucun résultat sur archive.org.</div>`;
     docs.forEach(d => {
       const row = document.createElement("div"); row.className = "res";
@@ -401,7 +435,7 @@ async function searchIA() {
 $("#aGo").onclick = searchIA;
 $("#aQ").addEventListener("keydown", e => { if (e.key === "Enter") searchIA(); });
 
-// Ajout par lien ou identifiant
+// Ajout par lien ou identifiant archive.org
 $("#aUrlGo").onclick = async () => {
   const v = $("#aUrl").value.trim(); if (!v) return;
   const m = v.match(/archive\.org\/(?:details|download|embed)\/([^/?#]+)/);
@@ -414,8 +448,37 @@ $("#aUrlGo").onclick = async () => {
   } catch (e) { msg("Erreur de connexion à archive.org."); }
 };
 
+/* ---------- Fichiers locaux (depuis ton PC) ---------- */
+const localURL = {};   // id -> adresse temporaire du fichier (en mémoire seulement)
+
+// Choisir un fichier : le titre se remplit avec le nom nettoyé
+$("#aFile").onchange = () => {
+  const f = $("#aFile").files[0]; if (!f) return;
+  $("#aTitle").value = f.name.replace(/\.[^.]+$/, "").replace(/[._]+/g, " ").trim();
+};
+$("#aFileGo").onclick = () => {
+  const f = $("#aFile").files[0], title = $("#aTitle").value.trim();
+  if (!f) return msg("Choisis d'abord un fichier.");
+  if (!title) return msg("Il faut un titre.");
+  const id = "local-" + Date.now();
+  localURL[id] = URL.createObjectURL(f);
+  const l = loadMine(); l.push({ id, title, local: true }); saveMine(l);
+  closeAll(); loadData();
+};
+
+function playLocal(m) {
+  const u = localURL[m.localId];
+  if (u) { vid.src = u; vid.play().catch(() => {}); return; }
+  // Après un rechargement de la page : on redemande le fichier
+  closePlayer();
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "video/mp4,video/webm";
+  inp.onchange = () => { if (inp.files[0]) { localURL[m.localId] = URL.createObjectURL(inp.files[0]); play(m); } };
+  inp.click();
+}
+
 /* =====================================================================
-   9) LECTEUR (archive.org en direct, WebTorrent en option)
+   9) LECTEUR (archive.org, fichier local, WebTorrent en option)
    ===================================================================== */
 const vid = $("#vid");
 let client = null, current = null, tok = 0;
@@ -433,17 +496,18 @@ function play(m) {
   $("#ptitle").textContent = m.title;
   $("#pstats").textContent = ""; $("#perr").textContent = "";
   showLoader("Chargement…", 0);
-  if (m.archive) playArchive(m, my); else playMagnet(m);
+  if (m.local) playLocal(m);
+  else if (m.archive) playArchive(m, my);
+  else playMagnet(m);
 }
 
-/* --- archive.org : on cherche le meilleur fichier vidéo puis on le lit directement --- */
+/* archive.org : on cherche le meilleur fichier vidéo puis on le lit directement */
 async function playArchive(m, my) {
   try {
     const j = await (await fetch(`${IA}/metadata/${encodeURIComponent(m.archive)}`)).json();
     if (my !== tok) return;
     const files = (j.files || []).filter(f => /\.(mp4|m4v|webm|ogv)$/i.test(f.name) && !/sample|trailer/i.test(f.name));
-    if (!files.length) throw new Error("Aucune vidéo lisible dans cet item (format .mkv/.avi non supporté par les navigateurs, ou accès restreint).");
-    // Préfère le MP4 « dérivé » (compatible navigateur), puis le plus gros
+    if (!files.length) throw new Error("Aucune vidéo lisible dans cet item (.mkv/.avi non supportés, ou accès restreint).");
     const score = f => (/\.mp4$/i.test(f.name) ? 2 : 0) + (f.source === "derivative" ? 1 : 0);
     files.sort((a, b) => score(b) - score(a) || (+b.size || 0) - (+a.size || 0));
     vid.src = `${IA}/download/${encodeURIComponent(m.archive)}/${files[0].name.split("/").map(encodeURIComponent).join("/")}`;
@@ -460,9 +524,9 @@ vid.addEventListener("progress", () => {              // barre de buffer
 });
 vid.addEventListener("playing", () => $("#loader").style.display = "none");
 vid.addEventListener("waiting", () => showLoader("Mise en mémoire tampon…"));
-vid.addEventListener("error", () => { if (vid.getAttribute("src")) { showLoader("Erreur"); $("#perr").textContent = "Lecture impossible (fichier indisponible ou accès restreint)."; } });
+vid.addEventListener("error", () => { if (vid.getAttribute("src")) { showLoader("Erreur"); $("#perr").textContent = "Lecture impossible (fichier indisponible, accès restreint ou codec non supporté)."; } });
 
-/* --- WebTorrent (optionnel) --- */
+/* WebTorrent (optionnel) */
 function playMagnet(m) {
   if (typeof WebTorrent === "undefined") { $("#perr").textContent = "WebTorrent n'a pas pu se charger."; return; }
   client = client || new WebTorrent();
@@ -490,7 +554,48 @@ function closePlayer() {
 $("#pClose").onclick = closePlayer;
 
 /* =====================================================================
-   10) VIE PRIVÉE — verrouillage SANS mot de passe
+   10) DEMANDES DE FILMS → DISCORD
+   ===================================================================== */
+const rMsg = (t, ok) => { const e = $("#rMsg"); e.textContent = t; e.className = ok ? "ok" : "ko"; };
+
+$("#reqBtn").onclick = () => { rMsg("", true); $("#rTitle").value = ""; $("#req").classList.add("open"); setTimeout(() => $("#rTitle").focus(), 50); };
+$("#rClose").onclick = closeReq;
+$("#req").addEventListener("click", e => { if (e.target.id === "req") closeReq(); });
+$("#rTitle").addEventListener("keydown", e => { if (e.key === "Enter") sendRequest(); });
+$("#rSend").onclick = sendRequest;
+
+async function sendRequest() {
+  const titre = $("#rTitle").value.replace(/\s+/g, " ").trim().slice(0, 100);
+  if (!titre) return rMsg("Écris un titre.", false);
+  if (WEBHOOK_URL.includes("TON_URL_ICI")) return rMsg("Webhook non configuré.", false);
+
+  // Anti-spam : une demande toutes les X secondes par navigateur
+  let last = 0; try { last = +localStorage.getItem("maisonflix_lastreq") || 0; } catch (e) {}
+  const wait = Math.ceil((last + REQ_COOLDOWN_SEC * 1000 - Date.now()) / 1000);
+  if (wait > 0) return rMsg(`Patiente encore ${wait} s avant une nouvelle demande.`, false);
+
+  $("#rSend").disabled = true;
+  try {
+    const r = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: `🎬 **Nouvelle demande de film :** ${titre}`,
+        allowed_mentions: { parse: [] }               // bloque @everyone / @here / mentions
+      })
+    });
+    if (!r.ok) throw new Error(r.status);
+    try { localStorage.setItem("maisonflix_lastreq", Date.now()); } catch (e) {}
+    $("#rTitle").value = "";
+    rMsg("✅ Demande envoyée, merci !", true);
+  } catch (e) {
+    rMsg("Envoi impossible, réessaie plus tard.", false);
+  }
+  $("#rSend").disabled = false;
+}
+
+/* =====================================================================
+   11) VIE PRIVÉE — verrouillage SANS mot de passe
    ===================================================================== */
 function lock() { closePlayer(); closeAll(); document.body.classList.add("locked"); document.title = "Nouvel onglet"; }
 function unlock() { document.body.classList.remove("locked"); document.title = "MaisonFlix"; resetIdle(); }
@@ -523,7 +628,7 @@ function resetIdle() { clearTimeout(idle); idle = setTimeout(lock, CONFIG.AUTOLO
 vid.addEventListener("timeupdate", resetIdle);
 
 /* =====================================================================
-   11) DÉMARRAGE
+   12) DÉMARRAGE
    ===================================================================== */
 loadData();
 </script>
