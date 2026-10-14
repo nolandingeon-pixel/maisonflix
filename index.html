@@ -444,7 +444,7 @@ $("#aQ").addEventListener("keydown", e => { if (e.key === "Enter") searchIA(); }
 // Ajout par lien ou identifiant archive.org
 $("#aUrlGo").onclick = async () => {
   const v = $("#aUrl").value.trim(); if (!v) return;
-  const m = v.match(/archive\.org\/(?:details|download|embed)\/([^/?#]+)/);
+  const m = v.match(/archive\.org\/(?:[^?#]*?\/)?(?:details|download|embed|items)\/([^/?#]+)/);
   const id = decodeURIComponent(m ? m[1] : v);
   msg("Vérification…");
   try {
