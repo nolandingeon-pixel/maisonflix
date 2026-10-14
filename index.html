@@ -279,22 +279,32 @@ async function enrich(m) {
 /* =====================================================================
    4) MES FILMS (sauvegardés dans le navigateur)
    ===================================================================== */
-const KEY = "maisonflix_mine";
-const loadMine = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } };
-const saveMine = l => { try { localStorage.setItem(KEY, JSON.stringify(l)); } catch (e) {} };
+const KEY = "maisonflix_local";   // fichiers de ton PC : visibles seulement sur cet appareil
+const loadLocal = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } };
+const saveLocal = l => { try { localStorage.setItem(KEY, JSON.stringify(l)); } catch (e) {} };
 
-function addMine(id, title) {
-  const l = loadMine();
-  if (!l.some(m => m.id === id) && !LIBRARY.some(m => m.id === id)) { l.push({ id, title }); saveMine(l); }
-  closeAll(); loadData();
+// Films PARTAGÉS : lus dans le fichier films.json du dépôt GitHub (visibles par tout le monde)
+let shared = [];
+async function fetchShared() {
+  try { shared = await (await fetch("films.json?t=" + Date.now())).json(); } catch (e) { shared = []; }
 }
-function removeMine(id) { saveMine(loadMine().filter(m => m.id !== id)); closeAll(); loadData(); }
+function addMine(id, title) {
+  const l = loadLocal();
+  const deja = shared.some(m => m.id === id) || LIBRARY.some(m => m.id === id) || l.some(m => m.id === id);
+  if (!deja) { l.push({ id, title }); saveLocal(l); }
+  const ligne = JSON.stringify({ id, title });
+  try { navigator.clipboard.writeText(ligne + ","); } catch (e) {}
+  closeAll(); loadData();
+  if (!deja) alert("Ajouté chez toi.\n\nPour que TOUT LE MONDE le voie, ajoute cette ligne dans films.json sur GitHub (déjà copiée dans ton presse-papier) :\n\n" + ligne + ",");
+}
+function removeMine(id) { saveLocal(loadLocal().filter(m => m.id !== id)); closeAll(); loadData(); }
 
 /* =====================================================================
    5) CHARGEMENT DES DONNÉES
    ===================================================================== */
 async function loadData() {
-  const entries = [...LIBRARY, ...loadMine().map(m => ({ ...m, mine: true }))];
+  await fetchShared();
+  const entries = [...LIBRARY, ...shared, ...loadLocal().map(m => ({ ...m, mine: true }))];
   library = await Promise.all(entries.map(async e => {
     const ia = e.id && !e.local;                       // film archive.org ?
     const m = { key: "lib:" + (e.id || e.title), archive: ia ? e.id : undefined,
@@ -462,7 +472,7 @@ $("#aFileGo").onclick = () => {
   if (!title) return msg("Il faut un titre.");
   const id = "local-" + Date.now();
   localURL[id] = URL.createObjectURL(f);
-  const l = loadMine(); l.push({ id, title, local: true }); saveMine(l);
+  const l = loadLocal(); l.push({ id, title, local: true }); saveLocal(l);
   closeAll(); loadData();
 };
 
