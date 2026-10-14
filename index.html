@@ -51,6 +51,10 @@ h2{margin:28px 0 12px;font-size:clamp(1.1rem,2vw,1.5rem)}
 .card{position:relative;aspect-ratio:2/3;border-radius:6px;overflow:hidden;background:linear-gradient(135deg,#333,#1a1a1a);cursor:pointer;transition:transform .25s,box-shadow .25s}
 .card img{width:100%;height:100%;object-fit:cover;display:block}
 .card .t{position:absolute;inset:auto 0 0 0;padding:30px 8px 8px;font-size:.85rem;font-weight:600;background:linear-gradient(transparent,#000d)}
+.card .cdel{display:none;position:absolute;top:6px;right:6px;z-index:3;background:#e50914;color:#fff;border:0;width:28px;height:28px;border-radius:50%;font-size:.95rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px #000a}
+body.delmode .card .cdel{display:block}
+body.delmode .card{outline:2px dashed #e50914;outline-offset:-2px}
+#delBar{display:none;position:fixed;left:50%;top:70px;transform:translateX(-50%);z-index:70;background:#e50914;color:#fff;padding:8px 16px;border-radius:50px;font-weight:700;font-size:.85rem;box-shadow:0 6px 20px #000a}
 .card .badge{position:absolute;top:6px;left:6px;background:var(--red);font-size:.65rem;padding:2px 6px;border-radius:3px;font-weight:700}
 @media (hover:hover){.card:hover{transform:scale(1.12);z-index:10;box-shadow:0 10px 30px #000c}}
 .empty{color:var(--mut);padding:10px 0}
@@ -132,19 +136,10 @@ footer{color:#666;text-align:center;font-size:.75rem;padding:30px 20px 80px}
   <main>
     <h2>Ma bibliothèque</h2>
     <div class="grid" id="gridLib"></div>
-
-    <div id="exploreWrap">
-      <h2>Explorer archive.org · films du domaine public</h2>
-      <div class="grid" id="gridExplore"></div>
-    </div>
-
-    <div id="trendWrap">
-      <h2>Tendances TMDB</h2>
-      <div class="grid" id="gridTrend"></div>
-    </div>
   </main>
 
   <!-- Bouton + fenêtre de demande de film (→ Discord) -->
+  <div id="delBar">🗑 Mode suppression : clique sur ✕ · N pour quitter</div>
   <button id="reqBtn">🎬 Demander un film</button>
   <div class="modal" id="req">
     <div class="form">
@@ -221,10 +216,7 @@ const REQ_COOLDOWN_SEC = 60;         // délai minimum entre deux demandes (anti
    archive.org : { id: "identifiant", title: "Titre" }
    WebTorrent  : { title: "Titre", magnetURI: "magnet:?xt=..." }
    ===================================================================== */
-const LIBRARY = [
-  { id: "night_of_the_living_dead", title: "Night of the Living Dead" },
-  { id: "BigBuckBunny_124",        title: "Big Buck Bunny" }
-];
+const LIBRARY = [];   // vide : le site n'affiche que TES films (films.json + ceux ajoutés chez toi)
 
 /* =====================================================================
    3) OUTILS
@@ -284,6 +276,8 @@ const loadLocal = () => { try { return JSON.parse(localStorage.getItem(KEY)) || 
 const saveLocal = l => { try { localStorage.setItem(KEY, JSON.stringify(l)); } catch (e) {} };
 
 // Films PARTAGÉS : lus dans le fichier films.json du dépôt GitHub (visibles par tout le monde)
+const loadHidden = () => { try { return JSON.parse(localStorage.getItem("maisonflix_hidden")) || []; } catch (e) { return []; } };
+const saveHidden = l => { try { localStorage.setItem("maisonflix_hidden", JSON.stringify(l)); } catch (e) {} };
 let shared = [];
 async function fetchShared() {
   try { shared = await (await fetch("films.json?t=" + Date.now())).json(); } catch (e) { shared = []; }
@@ -304,7 +298,8 @@ function removeMine(id) { saveLocal(loadLocal().filter(m => m.id !== id)); close
    ===================================================================== */
 async function loadData() {
   await fetchShared();
-  const entries = [...LIBRARY, ...shared, ...loadLocal().map(m => ({ ...m, mine: true }))];
+  const hidden = loadHidden();
+  const entries = [...LIBRARY, ...shared.filter(m => !hidden.includes(m.id)), ...loadLocal().map(m => ({ ...m, mine: true }))];
   library = await Promise.all(entries.map(async e => {
     const ia = e.id && !e.local;                       // film archive.org ?
     const m = { key: "lib:" + (e.id || e.title), archive: ia ? e.id : undefined,
@@ -322,29 +317,7 @@ async function loadData() {
   }));
   render();
   if (library[0]) setHero(library[0]);
-  loadExplore();
-  loadTrending();
-}
-
-async function loadExplore() {
-  if (explore.length) return;
-  try {
-    const docs = await iaSearch("collection:feature_films AND mediatype:movies", CONFIG.EXPLORE_COUNT);
-    explore = await Promise.all(docs.map(d => enrich(fromIA(d, { src: "explore" }))));
-  } catch (e) { $("#exploreWrap").style.display = "none"; }
-  render();
-  if (!heroMovie && explore[0]) setHero(explore[0]);
-}
-
-async function loadTrending() {
-  if (!CONFIG.TMDB_KEY) { $("#trendWrap").style.display = "none"; return; }
-  if (trending.length) return;
-  try {
-    const t = await tmdb("/trending/movie/week");
-    trending = t.results.map(d => ({ key: "tm:" + d.id, title: d.title, overview: d.overview || "Pas de résumé.",
-      poster: IMG(d.poster_path), backdrop: IMG(d.backdrop_path, "w1280"), year: (d.release_date || "").slice(0, 4), src: "trend" }));
-  } catch (e) { $("#trendWrap").style.display = "none"; }
-  render();
+  else { heroMovie = null; $("#hTitle").textContent = "Bienvenue"; $("#hDesc").textContent = "Ajoute ton premier film avec le bouton ＋."; $("#hero").style.backgroundImage = ""; }
 }
 
 /* =====================================================================
@@ -364,8 +337,9 @@ function card(m) {
   const el = document.createElement("div");
   el.className = "card";
   el.innerHTML = (m.poster ? `<img loading="lazy" alt="" src="${esc(m.poster)}" onerror="this.style.display='none'">` : "") +
-    `<div class="t">${esc(m.title)}</div>` + (playable(m) ? `<div class="badge">▶ LECTURE</div>` : "");
+    `<div class="t">${esc(m.title)}</div>` + (playable(m) ? `<div class="badge">▶ LECTURE</div>` : "") + `<button class="cdel" title="Supprimer">✕</button>`;
   el.onclick = () => openInfo(m);
+  el.querySelector(".cdel").onclick = e => { e.stopPropagation(); deleteFilm(m); };
   return el;
 }
 
@@ -378,11 +352,33 @@ function render() {
     l.forEach(m => g.appendChild(card(m)));
   };
   fill("#gridLib", library, q ? "Aucun résultat." : "Vide pour l'instant : ajoute un film avec le bouton ＋.");
-  fill("#gridExplore", explore, "Aucun résultat.");
-  fill("#gridTrend", trending, "Aucun résultat.");
 }
 $("#search").addEventListener("input", render);                 // filtre en direct
 addEventListener("scroll", () => $("#nav").classList.toggle("solid", scrollY > 40));
+
+
+/* =====================================================================
+   SUPPRESSION : appuie sur N pour afficher / cacher les croix ✕
+   ===================================================================== */
+function deleteFilm(m) {
+  if (!confirm("Supprimer « " + m.title + " » ?")) return;
+  const id = m.mineId;
+  if (m.mine) { removeMine(id); return; }                     // film ajouté chez toi
+  const h = loadHidden(); if (!h.includes(id)) { h.push(id); saveHidden(h); }   // film de films.json : masqué chez toi
+  loadData();
+  alert("Film masqué chez toi.\n\nPour le supprimer pour TOUT LE MONDE, retire sa ligne dans films.json sur GitHub :\n\n" + JSON.stringify({ id, title: m.title }));
+}
+function toggleDelMode(on) {
+  document.body.classList.toggle("delmode", on);
+  $("#delBar").style.display = on ? "block" : "none";
+}
+addEventListener("keydown", e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (document.body.classList.contains("locked")) return;
+  const t = e.target.tagName; if (t === "INPUT" || t === "TEXTAREA") return;
+  if (e.key === "n" || e.key === "N") toggleDelMode(!document.body.classList.contains("delmode"));
+  if (e.key === "Escape") toggleDelMode(false);
+});
 
 /* =====================================================================
    7) MODALE INFOS
